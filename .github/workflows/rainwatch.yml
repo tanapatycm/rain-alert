@@ -15,6 +15,7 @@ jobs:
     env:
       RAINWATCH_SITE: https://yala-rainwatch.workspace-751322.chatgpt.site
       RAINWATCH_WORK: /tmp/rainwatch-work
+      RAINWATCH_SITE_ACCESS: ${{ secrets.RAINWATCH_SITE_ACCESS }}
     steps:
       - name: Install OCR tools on the cloud runner
         run: |
@@ -25,11 +26,19 @@ jobs:
       - name: Fetch verified radar runner
         run: |
           python3 - <<'PY'
-          import hashlib, pathlib, urllib.request
+          import hashlib, os, pathlib, urllib.request
           origin = 'https://yala-rainwatch.workspace-751322.chatgpt.site'
-          assets = {'radar-cycle.py': 'e5b80085150a15cbe58a917d18b90a250bb9d643ccf07153ddf2b553795c19e7', 'service.py': '07457f1b1205ae607cc93626a4902003232c0f9d59d874545068aa0c359cfa0d'}
+          access = os.environ.get('RAINWATCH_SITE_ACCESS', '')
+          if not access:
+              raise SystemExit('Missing RAINWATCH_SITE_ACCESS repository secret. Configure the Site service access credential first.')
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  raise SystemExit('Unexpected Site redirect; service credential was not forwarded.')
+          opener = urllib.request.build_opener(NoRedirect())
+          assets = {'radar-cycle.py': 'e5b80085150a15cbe58a917d18b90a250bb9d643ccf07153ddf2b553795c19e7', 'service.py': 'b7568472101012fc8c0d726081eb5f3f9e62d19487ccba2d724894674c135a9c'}
           for name, expected in assets.items():
-              with urllib.request.urlopen(origin+'/runner/'+name, timeout=30) as response:
+              request = urllib.request.Request(origin+'/runner/'+name, headers={'OAI-Sites-Authorization': 'Bearer '+access})
+              with opener.open(request, timeout=30) as response:
                   data = response.read(1000001)
               if hashlib.sha256(data).hexdigest() != expected:
                   raise SystemExit('Runner changed. Update rainwatch.yml from the Site before running again.')
