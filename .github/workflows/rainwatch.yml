@@ -35,7 +35,7 @@ jobs:
               def redirect_request(self, *args, **kwargs):
                   raise SystemExit('Unexpected Site redirect; service credential was not forwarded.')
           opener = urllib.request.build_opener(NoRedirect())
-          assets = {'radar-cycle.py': '522a6dadfcb02ce7adbd642fc4d954cc4f444ab5c28f3e04d92cacfef6fe7b8f', 'service.py': 'b7568472101012fc8c0d726081eb5f3f9e62d19487ccba2d724894674c135a9c'}
+          assets = {'radar-cycle.py': 'ca2f726a1391e9c583be50a6c315cafbf4953bf621715b89285125f06716349a', 'service.py': 'c9cfedf1a246a54271e17ac4327a794f87da77faf26169b0979174352df42f36', 'rainviewer_acquire.py': 'b6f24bbcce9be1a9f23c2a3bd8f8856a8386e9d69fecd46c9d8b40f2fe9f9a13', 'rainviewer-palette.json': '443a7f86d8e5ffdb4ca50c1dc80088d43e119d59186707eb7b1f0cdbfb648111'}
           for name, expected in assets.items():
               request = urllib.request.Request(origin+'/runner/'+name, headers={'OAI-Sites-Authorization': 'Bearer '+access})
               with opener.open(request, timeout=30) as response:
