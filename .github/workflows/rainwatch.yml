@@ -1,0 +1,39 @@
+name: Yala RainWatch cloud radar
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions:
+  id-token: write
+concurrency:
+  group: rainwatch-radar
+  cancel-in-progress: false
+jobs:
+  radar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      RAINWATCH_SITE: https://yala-rainwatch.workspace-751322.chatgpt.site
+      RAINWATCH_WORK: ${{ runner.temp }}/rainwatch-work
+    steps:
+      - name: Install OCR tools on the cloud runner
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr python3-venv
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check 'Pillow>=11,<13'
+      - name: Fetch verified radar runner
+        run: |
+          python3 - <<'PY'
+          import hashlib, pathlib, urllib.request
+          origin = 'https://yala-rainwatch.workspace-751322.chatgpt.site'
+          assets = {'radar-cycle.py': 'e5b80085150a15cbe58a917d18b90a250bb9d643ccf07153ddf2b553795c19e7', 'service.py': '07457f1b1205ae607cc93626a4902003232c0f9d59d874545068aa0c359cfa0d'}
+          for name, expected in assets.items():
+              with urllib.request.urlopen(origin+'/runner/'+name, timeout=30) as response:
+                  data = response.read(1000001)
+              if hashlib.sha256(data).hexdigest() != expected:
+                  raise SystemExit('Runner changed. Update rainwatch.yml from the Site before running again.')
+              pathlib.Path(name).write_bytes(data)
+          PY
+      - name: Check real radar and submit eligible alerts
+        run: .venv/bin/python service.py --once
