@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 10
     env:
       RAINWATCH_SITE: https://yala-rainwatch.workspace-751322.chatgpt.site
-      RAINWATCH_WORK: ${{ runner.temp }}/rainwatch-work
+      RAINWATCH_WORK: /tmp/rainwatch-work
     steps:
       - name: Install OCR tools on the cloud runner
         run: |
